@@ -15,7 +15,7 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 # अपना टोकन और User ID यहाँ रखें
-BOT_TOKEN = "8530224634:AAEWpdn6AD3jrksLjx2DZJWwAGabyF3Gozs"
+BOT_TOKEN = "8530224634:AAEAggfYdL1vekDXH3pkPu9xe2C1HZYncc0"
 YOUR_USER_ID = 8010857405
 bot = telebot.TeleBot(BOT_TOKEN)
 
