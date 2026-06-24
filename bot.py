@@ -4,7 +4,6 @@ import telebot
 import threading
 from flask import Flask
 
-# --- Flask Server (Render के लिए) ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -15,67 +14,42 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# --- Bot Setup ---
+# अपना टोकन और User ID यहाँ रखें
+BOT_TOKEN = "8530224634:AAEWpdn6AD3jrksLjx2DZJWwAGabyF3Gozs"
 YOUR_USER_ID = 8010857405
-BOT_TOKEN = "8530224634:AAEAggfYdL1vekDXH3pkPu9xe2C1HZYncc0"
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# --- MCQ Parsing Function ---
-def parse_mcq(text):
-    lines = [line.strip() for line in text.split('\n') if line.strip()]
-    if len(lines) < 6:
-        return None
-
-    question_lines = []
-    option_lines = []
-    answer_line = None
-
-    for line in lines:
-        if re.match(r'^(?:Answer|Ans|सही उत्तर|जवाब)', line, re.IGNORECASE):
-            answer_line = line
-        elif re.match(r'^[a-dA-D1-4][\.\)]', line) or re.match(r'^[\(\[]?[a-dA-D1-4][\)\]]', line):
-            option_lines.append(line)
-        else:
-            question_lines.append(line)
-
-    if len(option_lines) != 4 or not answer_line:
-        return None
-
-    question = "\n".join(question_lines).strip()
-    options = [re.sub(r'^[\(\[]?[a-dA-D1-4][\.\)\]]?\s*', '', opt).strip() for opt in option_lines]
-
-    ans_match = re.search(r'([a-dA-D1-4])', answer_line)
-    if not ans_match:
-        return None
+def parse_mcq_robust(text):
+    # यह पैटर्न सवाल, 4 विकल्प और आंसर को किसी भी फॉर्मेट में पकड़ेगा
+    # यह (1), 1), 1. या (A), A), A. को सपोर्ट करता है
+    pattern = r"(?s)(.*?)\n\s*\(?[1A-D][\.\)]\s*(.*?)\n\s*\(?[2B][\.\)]\s*(.*?)\n\s*\(?[3C][\.\)]\s*(.*?)\n\s*\(?[4D][\.\)]\s*(.*?)\n\s*(?:Answer|Ans)\s*[:\s]*\(?([1-4A-D])\)"
+    match = re.search(pattern, text, re.IGNORECASE)
     
-    answer = ans_match.group(1)
-    if answer.isdigit():
-        correct_idx = int(answer) - 1
-    else:
-        correct_idx = ord(answer.upper()) - 65
+    if match:
+        question = match.group(1).strip()
+        options = [match.group(2).strip(), match.group(3).strip(), match.group(4).strip(), match.group(5).strip()]
+        ans_raw = match.group(6).upper()
+        
+        # इंडेक्स निकालें (A=0, 1=0, B=1, 2=1 etc)
+        correct_idx = (int(ans_raw) - 1) if ans_raw.isdigit() else (ord(ans_raw) - 65)
+        return question, options, correct_idx
+    return None
 
-    return question, options, correct_idx
-
-# --- Message Handler ---
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
-    if message.from_user.id != YOUR_USER_ID:
-        bot.reply_to(message, "Access Denied. यह बोट प्राइवेट है।")
-        return
-
-    result = parse_mcq(message.text)
+    if message.from_user.id != YOUR_USER_ID: return
+    
+    result = parse_mcq_robust(message.text)
     if result:
         question, options, correct_idx = result
-        response = f"✅ **Question Identified:**\n{question}\n\n"
+        response = f"✅ {question}\n\n"
         for i, opt in enumerate(options):
             marker = "🔹" if i == correct_idx else "⚪"
             response += f"{marker} {opt}\n"
         bot.reply_to(message, response)
     else:
-        bot.reply_to(message, "❌ Sorry, I couldn't understand the MCQ format. Please check the text.")
+        bot.reply_to(message, "❌ इस फॉर्मेट को नहीं पहचान पाया। कृपया वैसा ही फॉर्मेट भेजें जैसा स्क्रीनशॉट में है।")
 
 if __name__ == "__main__":
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.start()
-    print("Bot is starting...")
+    threading.Thread(target=run_flask).start()
     bot.infinity_polling()
