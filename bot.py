@@ -10,13 +10,12 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # 1. Number Format Check (1, 2, 3, 4) - Super Strong Regex
 def parse_mcq(text):
     import re
-    pattern_1234 = r"(?s)(?:\s*|\\\s*)\(1\)(.*?)\(2\)(.*?)\(3\)(.*?)\(4\)(?:\s*|\\\s*)(?:Answer|Ans)\s*:\s*([1-4])"
+    # 1. Number Format Check (1, 2, 3, 4)
+    pattern_1234 = r"(?s)Question:(.*?)\(1\)(.*?)\(2\)(.*?)\(3\)(.*?)\(4\)(.*?)(?:Answer|Ans)\s*:\s*([1-4])"
     match_1234 = re.search(pattern_1234, text, re.IGNORECASE)
 
     if match_1234:
         question = match_1234.group(1).strip()
-        question = re.sub(r"^(?:Question:[Q:]\s*)", "", question, flags=re.IGNORECASE).strip()
-
         options = [
             match_1234.group(2).strip(),
             match_1234.group(3).strip(),
@@ -26,14 +25,12 @@ def parse_mcq(text):
         correct_idx = int(match_1234.group(6).strip()) - 1
         return question, options, correct_idx
 
-    # 2. Alphabet Format Check (A, B, C, D) - Super Strong Regex
-    pattern_abcd = r"(?s)(?:\s*|\\\s*)\(A\)(.*?)\(B\)(.*?)\(C\)(.*?)\(D\)(?:\s*|\\\s*)(?:Answer|Ans)\s*:\s*([A-D])"
+    # 2. Alphabet Format Check (A, B, C, D)
+    pattern_abcd = r"(?s)Question:(.*?)\(A\)(.*?)\(B\)(.*?)\(C\)(.*?)\(D\)(.*?)(?:Answer|Ans)\s*:\s*([A-D])"
     match_abcd = re.search(pattern_abcd, text, re.IGNORECASE)
 
     if match_abcd:
         question = match_abcd.group(1).strip()
-        question = re.sub(r"^(?:Question:[Q:]\s*)", "", question, flags=re.IGNORECASE).strip()
-
         options = [
             match_abcd.group(2).strip(),
             match_abcd.group(3).strip(),
