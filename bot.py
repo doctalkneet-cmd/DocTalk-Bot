@@ -17,7 +17,7 @@ def run_flask():
 
 # --- Bot Setup ---
 YOUR_USER_ID = 8010857405
-BOT_TOKEN = "8530224634:AAEWpdn6AD3jrksLjx2DZJWwAGabyF3Gozs"
+BOT_TOKEN = "8530224634:AAEAggfYdL1vekDXH3pkPu9xe2C1HZYncc0"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # --- MCQ Parsing Function ---
