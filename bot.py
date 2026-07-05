@@ -1,3 +1,4 @@
+import time
 import os
 import re
 import threading
@@ -70,22 +71,55 @@ def all_messages(message):
     if message.from_user.id != OWNER_ID:
         return
 
-    data = parse_mcq(message.text)
+    blocks = message.text.split("---")
 
-    if not data:
-        bot.reply_to(message, "❌ MCQ format not recognised.")
-        return
+    total = 0
 
-    question, options, answer = data
+    for block in blocks:
 
-    bot.send_poll(
-        chat_id=message.chat.id,
-        question=question,
-        options=options,
-        type="quiz",
-        correct_option_id=answer,
-        is_anonymous=True
-    )
+        block = block.strip()
+
+        if not block:
+            continue
+
+        data = parse_mcq(block)
+
+        if not data:
+            continue
+
+        question, options, answer = data
+
+        # Long Question Handling
+        if len(question) > 290:
+            bot.send_message(message.chat.id, question)
+            poll_question = "Choose the Correct Answer"
+        else:
+            poll_question = question
+
+        # Long Options Handling
+        options = [opt[:100] for opt in options]
+
+        bot.send_poll(
+            chat_id=message.chat.id,
+            question=poll_question,
+            options=options,
+            type="quiz",
+            correct_option_id=answer,
+            is_anonymous=True
+        )
+
+        total += 1
+
+        # Telegram Rate Limit
+        time.sleep(0.5)
+
+    if total == 0:
+        bot.reply_to(message, "❌ No valid MCQs found.")
+    else:
+        bot.send_message(
+            message.chat.id,
+            f"✅ {total} Quiz Created Successfully."
+        )
 
 # ---------------- MAIN ----------------
 if __name__ == "__main__":
